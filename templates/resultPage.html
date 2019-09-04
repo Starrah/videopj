@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>处理结果</title>
+    <script src="static/jquery.min.js"></script>
+</head>
+<body>
+    <div>
+        <h2 style="display: inline-block">欢迎使用图片深度学习处理工具！</h2>
+        <form method="post" action="logout" style="display: inline-block">
+            <div><input type="submit" value="登出" /></div>
+        </form>
+        <form method="get" action="history" style="display: inline-block">
+            <div><input type="submit" value="操作历史" /></div>
+        </form>
+    </div>
+    <br>
+    <div>
+        <h1>编号：{{ope.id}} 创建时间：{{ope.time|date:"Y-m-d H:i:s"}} 状态：
+            {% if ope.status == 0 %}
+            <span id="status" style="color: indianred">运行中</span>
+            {% elif ope.status == 1 %}
+            <span id="status" style="color: green">已完成</span>
+            {% endif %}
+        </h1>
+    </div>
+    输入图片：
+    <img src="{{ope.input.url}}"  alt="图片加载中" />
+
+    处理结果：
+    {% for one in ope.opers %}
+    <div class="resItem">
+        <p style="font-size: 2em">
+            {{one.name}}：{% if one.outputStr %} {{one.outputStr}} {% endif %}
+        </p>
+        <img src="{% if one.outputFileUrl %}{{one.outputFileUrl}}{% endif %}"  alt="" />
+    </div>
+    {% endfor %}
+
+    <form method="get" action="uploadPage">
+        <div>
+            <input type="submit" value="返回上传页面" />
+        </div>
+    </form>
+
+
+</body>
+
+<script>
+    operId = {{ope.id}}
+    function requestChange() {
+        $.ajax(`queryResult?id=${operId}`, {
+            success(res) {
+                console.log(res);
+                jsonObj = res;
+                statusStr = $("#status")[0];
+                if(res.status === 0){
+                    statusStr.style.color = "indianred";
+                    statusStr.innerText = "运行中";
+                }else{
+                    statusStr.style.color = "green";
+                    statusStr.innerText = "已完成";
+                }
+                itemsList = $(".resItem");
+                for (let i = 0; i < jsonObj.opers.length; i++) {
+                    console.log(jsonObj.opers[i]);
+                    itemsList[i].getElementsByTagName("p")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
+                    itemsList[i].getElementsByTagName("img")[0].src = jsonObj.opers[i].outputFileUrl ? jsonObj.opers[i].outputFileUrl : "";
+                }
+            },
+            fail(res) {
+                eval(res);
+                if(timerId)clearInterval(timerId)
+            }
+        })
+    }
+    window.onload = function() {
+        timerId = setInterval(requestChange, 500);
+    }
+</script>
+
+</html>

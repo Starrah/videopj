@@ -14,8 +14,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
+from django.views.static import serve
+from imagebkd import views
+from .settings import MEDIA_ROOT
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    re_path(r'^image/(?P<path>.*)', serve, {"document_root": MEDIA_ROOT}),
+    re_path("^test$", views.test),
+    re_path("^test2$", views.test2),
+    re_path("^login$", views.login),
+    re_path("^logon$", views.logon),
+    re_path("^logout$", views.logout),
+    re_path("^loginPage$", views.loginPage),
+    re_path("^uploadPage$", views.uploadPage),
+    re_path("^upload$", views.upload),
+    re_path("^resultPage$", views.resultPage),
+    re_path("^queryResult$", views.queryResult)
 ]
+
+REDIRECT_DICT = {
+    "^login$": "loginPage",
+    "^logon$": "loginPage",
+}

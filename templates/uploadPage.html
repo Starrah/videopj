@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>上传图片</title>
+</head>
+<body>
+    <div>
+        <h2 style="display: inline-block">欢迎使用图片深度学习处理工具！</h2>
+        <form method="post" action="logout" style="display: inline-block">
+            <div><input type="submit" value="登出" /></div>
+        </form>
+        <form method="get" action="history" style="display: inline-block">
+            <div><input type="submit" value="操作历史" /></div>
+        </form>
+    </div>
+    <br>
+    <h1>请您上传图片</h1>
+    <form method="post" action="upload" enctype="multipart/form-data">
+        {{ form.as_p }}
+        <div>
+            <input type="submit" value="提交" />
+        </div>
+    </form>
+
+
+</body>
+</html>
