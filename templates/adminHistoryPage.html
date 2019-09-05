@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员面板</title>
+    <script src="static/jquery.min.js"></script>
+</head>
+<body>
+    <div>
+        <h2 style="display: inline-block">管理员，您好！</h2>
+        <form method="post" action="logout" style="display: inline-block">
+            <div><input type="submit" value="登出" /></div>
+        </form>
+        <form method="get" action="uploadPage" style="display: inline-block">
+            <div><input type="submit" value="上传文件" /></div>
+        </form>
+        <form method="get" action="adminUser" style="display: inline-block">
+            <div><input type="submit" value="用户管理面板" /></div>
+        </form>
+    </div>
+    <br>
+    <div>
+        <form method="get" action="adminHistory" style="display: inline-block">
+            <input type="hidden" name="curPage" value="{{ data.curPage }}">
+            第{{ data.curPage }}/{{ data.totalPage }}页，共{{ data.total }}条记录。
+            <input type="submit" name="lastPage" value="上一页" {% if data.noLast %} disabled="disabled"{% endif %}>
+            <input type="submit" name="nextPage" value="下一页" {% if data.noNext %} disabled="disabled"{% endif %}>
+            {{ timeForm.as_p }}
+            用户名<input type="text" name="username">
+            <input type="submit" name="normal" value="查询" />
+        </form>
+    </div>
+
+    <div>
+        <form method="post" action="delete">
+            点击对应链接可进入查看详细信息；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除记录。<br><br>
+            序号 删除 编号 所属用户 创建时间 状态
+        {% for l in data.list %}
+        <div>
+            {{ l.index }}
+            <input type="checkbox" name="{{ l.id }}" style="display: inline" class="deleteCheckBox" />
+            <a href="resultPage?id={{ l.id }}" style="display: inline">{{ l.id }}</a>
+            {{ l.username }}
+            {{l.time|date:"Y-m-d H:i:s"}}
+            {% if l.status == 0 %}
+            <span id="status" style="color: indianred">运行中</span>
+            {% elif l.status == 1 %}
+            <span id="status" style="color: green">已完成</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+        </form>
+    </div>
+    <div>
+        <button onclick="checkall(true)">全选</button>
+        <button onclick="checkall(false)">反选</button>
+    </div>
+
+
+
+
+</body>
+
+<script>
+    window.onload = function() {
+        let list = $(".inl");
+        console.log(list);
+        for(i=0;i<list.length;i++){
+            list[i].parentElement.style.display = "inline-block";
+        }
+    };
+    function checkall(b) {
+        let list = $(".deleteCheckBox");
+        for(i=0;i<list.length;i++){
+            list[i].checked = b
+        }
+    }
+</script>
+
+</html>

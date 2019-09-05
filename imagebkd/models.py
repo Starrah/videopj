@@ -37,11 +37,13 @@ class Operation(models.Model):
 class Output(models.Model):
     type = models.PositiveSmallIntegerField()
     outputStr = models.TextField(default="处理中...")
-    outputFile = models.FileField()
+    outputFilePath = models.TextField()
     oper = models.ForeignKey(Operation, on_delete=models.CASCADE)
 
 
 class OperationSubmitForm(forms.ModelForm):
+    input = forms.fields.ImageField(required=False, label="选择文件")
+    inputUrl = forms.fields.URLField(required=False, label="或输入图片的Url")
     tocall = forms.fields.MultipleChoiceField(
         choices=((0, "A"), (1, "B"), (2, "C"),),
         label="执行的算法",
@@ -53,6 +55,16 @@ class OperationSubmitForm(forms.ModelForm):
         model=Operation
         fields=["input"]
         labels={
-            "input": "输入图片"
+            "input": "选择文件",
         }
+
+
+class TimeForm(forms.Form):
+    page = forms.fields.IntegerField(required=False, label="页码", widget=forms.widgets.NumberInput(attrs={"class": "inl"}))
+    begin = forms.fields.DateTimeField(required=False, label="从", widget=forms.widgets.DateTimeInput(attrs={"class": "inl"}))
+    end = forms.fields.DateTimeField(required=False, label="到", widget=forms.widgets.DateTimeInput(attrs={"class": "inl"}))
+
+    # def __init__(self, begin, end):
+    #     self.begin = begin
+    #     self.end = end
 

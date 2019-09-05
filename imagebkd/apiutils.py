@@ -48,6 +48,7 @@ def AlertResponse(text: str, status=200, redirect = None):
 import threading
 from PIL import Image
 from .models import Output, Operation
+from django.core.files import File
 class asyncNN(threading.Thread):
     def __init__(self, image: Image, operTypes: list, operObj):
         super().__init__()
@@ -73,5 +74,6 @@ class asyncNN(threading.Thread):
         import time
         time.sleep(5)
         otpObj = Output.objects.select_for_update().get(id=otpObj.id)
-        otpObj.outputStr="已完成"
+        otpObj.outputStr = "已完成"
+        otpObj.outputFilePath = "image/download/示例.png"
         otpObj.save()

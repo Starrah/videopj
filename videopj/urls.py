@@ -32,10 +32,17 @@ urlpatterns = [
     re_path("^uploadPage$", views.uploadPage),
     re_path("^upload$", views.upload),
     re_path("^resultPage$", views.resultPage),
-    re_path("^queryResult$", views.queryResult)
+    re_path("^queryResult$", views.queryResult),
+    re_path("^history$", views.history),
+    re_path("^delete$", views.delete),
+    re_path("^adminHistory$", views.adminHistory),
+    re_path("^adminUser$", views.adminUser),
+    re_path("^adminDeleteUser$", views.adminDeleteUser),
 ]
 
 REDIRECT_DICT = {
     "^login$": "loginPage",
     "^logon$": "loginPage",
+    "^delete$": "history",
+    "^upload$": "uploadPage",
 }

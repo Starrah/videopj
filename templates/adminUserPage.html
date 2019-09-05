@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员面板</title>
+    <script src="static/jquery.min.js"></script>
+</head>
+<body>
+    <div>
+        <h2 style="display: inline-block">管理员，您好！</h2>
+        <form method="post" action="logout" style="display: inline-block">
+            <div><input type="submit" value="登出" /></div>
+        </form>
+        <form method="get" action="uploadPage" style="display: inline-block">
+            <div><input type="submit" value="上传文件" /></div>
+        </form>
+        <form method="get" action="adminHistory" style="display: inline-block">
+            <div><input type="submit" value="记录管理面板" /></div>
+        </form>
+    </div>
+    <br>
+    <div>
+        <form method="get" action="adminUser" style="display: inline-block">
+            <input type="hidden" name="curPage" value="{{ data.curPage }}">
+            第{{ data.curPage }}/{{ data.totalPage }}页，共{{ data.total }}条记录。
+            <input type="submit" name="lastPage" value="上一页" {% if data.noLast %} disabled="disabled"{% endif %}>
+            <input type="submit" name="nextPage" value="下一页" {% if data.noNext %} disabled="disabled"{% endif %}>
+            {{ timeForm.as_p }}
+            <input type="submit" name="normal" value="查询" />
+        </form>
+    </div>
+
+    <div>
+        <form method="post" action="adminDeleteUser">
+            点击对应链接可进入查看用户的记录；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除用户。<br><br>
+            序号 删除 用户编号 用户名 上次登录 操作总数
+        {% for l in data.list %}
+        <div>
+            {{ l.index }}
+            <input type="checkbox" name="{{ l.id }}" style="display: inline" class="deleteCheckBox" />
+            <a href="adminHistory?username={{ l.username }}" style="display: inline">{{ l.id }}</a>
+            {{ l.username }}
+            {{l.time|date:"Y-m-d H:i:s"}}
+            {{ l.operCount }}
+        </div>
+        {% endfor %}
+        </form>
+    </div>
+    <div>
+        <button onclick="checkall(true)">全选</button>
+        <button onclick="checkall(false)">反选</button>
+    </div>
+
+
+
+
+</body>
+
+<script>
+    window.onload = function() {
+        let list = $(".inl");
+        console.log(list);
+        for(i=0;i<list.length;i++){
+            list[i].parentElement.style.display = "inline-block";
+        }
+    };
+    function checkall(b) {
+        let list = $(".deleteCheckBox");
+        for(i=0;i<list.length;i++){
+            list[i].checked = b
+        }
+    }
+</script>
+
+</html>

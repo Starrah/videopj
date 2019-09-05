@@ -14,6 +14,9 @@
         <form method="get" action="history" style="display: inline-block">
             <div><input type="submit" value="操作历史" /></div>
         </form>
+        <form method="get" action="uploadPage" style="display: inline-block">
+            <div><input type="submit" value="上传文件" /></div>
+        </form>
     </div>
     <br>
     <div>
@@ -32,7 +35,7 @@
     {% for one in ope.opers %}
     <div class="resItem">
         <p style="font-size: 2em">
-            {{one.name}}：{% if one.outputStr %} {{one.outputStr}} {% endif %}
+            {{one.name}}：{% if one.outputStr %}{{one.outputStr}}{% endif %}
         </p>
         <img src="{% if one.outputFileUrl %}{{one.outputFileUrl}}{% endif %}"  alt="" />
     </div>
