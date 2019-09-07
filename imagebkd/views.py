@@ -83,9 +83,11 @@ def unzipAllChooseImages(zipPath):
     foldername = exts[0]
     if len(exts) < 2 or exts[1] != ".zip":
         os.rename(zipPath, foldername+".zip")
-    zipPath = foldername+".zip"
+        zipPath = foldername+".zip"
     with zipfile.ZipFile(zipPath, 'r') as zipf:
         zipf.extractall(path=foldername)
+    # cmd = '%s x -o%s %s' % (os.path.join(MEDIA_ROOT, "7-Zip", "7z.exe"), os.path.abspath(foldername), os.path.abspath(zipPath))
+    # os.popen(cmd)
     res = []
     for root, dirs, files in os.walk(foldername):
         for file in files:
@@ -109,12 +111,22 @@ def unzipAllChooseImages(zipPath):
 #     return toSave
 
 
+from .apiutils import get_type2, getExtName
+
+
 def assertFileType(content_type=None, name = None):
-    if content_type == "application/zip" or filetype.guess_mime(name) == "application/zip":
+    if content_type == "application/zip" or content_type == "application/x-zip-compressed":
         return "zip", ".zip"
-    elif (content_type and content_type.find("image") == 0) or filetype.image(name):
-        return "img", filetype.get_type(content_type, os.path.splitext(name)[1]).extension
+    elif content_type and content_type.find("image") == 0:
+        return "img", get_type2(content_type, getExtName(name)).extension
     else:
+        try:
+            if filetype.guess_mime(name) == "application/zip":
+                return "zip", ".zip"
+            elif filetype.image(name):
+                return "img", get_type2(content_type, getExtName(name)).extension
+        except FileNotFoundError:
+            pass
         raise RequestHandleFailException(400, "输入的文件不是支持的图片或zip类型！")
 
 
@@ -138,12 +150,12 @@ def saveImageFieldFileFromUrl(url: str, oper: Operation):
 
 def saveImageFieldFile(f, imageFieldFile: ImageFieldFile, chosenName=None):
     if isinstance(f, File):
-        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), f, False)
+        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), f, True)
     elif isinstance(f, str) or isinstance(f, bytes):
         with open(f, "rb") as ff:
-            imageFieldFile.save(chosenName if chosenName else determineUpload(None, ff.name), File(ff), False)
+            imageFieldFile.save(chosenName if chosenName else determineUpload(None, ff.name), File(ff), True)
     else:
-        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), File(f), False)
+        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), File(f), True)
 
 
 
@@ -160,6 +172,7 @@ def upload(req: HttpRequest):
                 if form.cleaned_data["inputUrl"] != "":
                     urllist = form["inputUrl"].data.split(";")
                     for url in urllist:
+                        url = url.strip()
                         saveImageFieldFileFromUrl(url, oper)
                 else:
                     raise RequestHandleFailException(400, "必须上传文件或指定文件Url")
@@ -173,7 +186,7 @@ def upload(req: HttpRequest):
                             with open(toSave, "wb") as ff:
                                 for chunk in f.chunks(chunk_size=1024*1024):
                                     if chunk:
-                                        f.write(chunk)
+                                        ff.write(chunk)
                             pathList, dirname = unzipAllChooseImages(toSave)
                             for p in pathList:
                                 saveImageFieldFile(p, InputFile(oper=oper).input, chosenName=os.path.relpath(p, MEDIA_ROOT))
@@ -183,7 +196,7 @@ def upload(req: HttpRequest):
                     raise RequestHandleFailException(400, "不能同时上传文件和指定文件Url")
             oper.save()
             asyncNN(list(map(lambda x: x.input.path, oper.inputfile_set.all())), form.cleaned_data["tocall"], oper).start()
-            return redirect("/resultPage?id=" + str(form.instance.id))
+            return redirect("/resultPage?id=" + str(oper.id))
         else:
             raise RequestHandleFailException(400, "输入的文件或Url无效")
     else:
@@ -206,7 +219,7 @@ def getFilesListOrZip(pathStr: str, enableZip: bool):
         if enableZip > 0:
             zipFileName = pathStr + ".zip"
             if not os.path.exists(zipFileName):
-                with zipfile.ZipFile(zipFileName, 'wb', compression=zipfile.ZIP_DEFLATED) as zipf:
+                with zipfile.ZipFile(zipFileName, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(pathStr):
                         for filename in files:
                             pathfile = os.path.join(root, filename)
@@ -225,6 +238,8 @@ def getFilesListOrZip(pathStr: str, enableZip: bool):
 
 
 def getForDownloadPath(p, most=0):
+    if not p:
+        return p
     if isinstance(p, list):
         l = list(map(lambda x:os.path.join("image/download", os.path.relpath(x, "image/download")), p))
         if most > 0:
@@ -239,7 +254,7 @@ def getForDownloadPath(p, most=0):
 MOST_PIC_SHOW_INPUT = 5
 MOST_PIC_SHOW_RES = 5
 
-
+from .apiutils import NNList
 def resultPage(req: HttpRequest):
     assertRequestMethod(req, "GET")
     user = req.user
@@ -261,7 +276,7 @@ def resultPage(req: HttpRequest):
         otpList = []
         for otp in otps:
             otpData = {
-                "name": "hhh",
+                "name": NNList[otp.type]["name"],
                 "outputStr": otp.outputStr
             }
             otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
@@ -294,7 +309,7 @@ def queryResult(req: HttpRequest):
         otpDict = {}
         for otp in otps:
             otpData = {
-                "name": "hhh",
+                "name": NNList[otp.type]["name"],
                 "outputStr": otp.outputStr
             }
             otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
@@ -388,7 +403,7 @@ def delete(req: HttpRequest):
                 oper.delete()
             except Exception:
                 raise RequestHandleFailException(400, "数据记录不存在或状态异常！")
-        if req.headers["Referer"].find("adminHistory"):
+        if req.headers["Referer"].find("adminHistory") >= 0:
             return redirect("/adminHistory")
         return redirect("/history")
     else:

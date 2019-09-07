@@ -6,11 +6,17 @@ import random
 from os import path
 
 
+def getExtName(fileName: str, withdot=True):
+    a = path.splitext(fileName)
+    return ("." if withdot else "") + (a[1].lstrip(".") if a[1] != "" else a[0].lstrip("."))
+
+
+
 def determineUpload(instance, fileName):
     saveDir = "upload"
     millis = int(round(time.time() * 1000))
     ran = random.randint(0, 9999999)
-    extname = path.splitext(fileName)[1]
+    extname = getExtName(fileName)
     name = str(millis) + "_" + str(ran) + extname
     toSave = path.join(saveDir, name)
     if path.exists(toSave):
@@ -30,7 +36,7 @@ def determineDownload(instance, fileName):
     saveDir = "download"
     millis = int(round(time.time() * 1000))
     ran = random.randint(0, 9999999)
-    extname = path.splitext(fileName)[1] if fileName else ""
+    extname = getExtName(fileName) if fileName else ""
     name = str(millis) + "_" + str(ran) + extname
     toSave = path.join(saveDir, name)
     if path.exists(toSave):
@@ -83,11 +89,13 @@ class asyncNN(threading.Thread):
         from .models import Output
         super().__init__()
         self.images = images
+        if(len(operTypes) <= 0):
+            raise RequestHandleFailException(400, "您没有选择任何一个要执行的算法，因此无法完成操作。请重新选择。")
         self.operTypes = operTypes
         self.operObj = operObj
         self.otpList = []
         for oneOper in self.operTypes:
-            output = Output(type=oneOper, oper=self.operObj)
+            output = Output(type=int(oneOper), oper=self.operObj)
             output.save()
             self.otpList.append(output)
 
@@ -109,7 +117,7 @@ class asyncNN(threading.Thread):
                     outputpath = path.join(MEDIA_ROOT, "download", path.relpath(image, path.join(MEDIA_ROOT, "upload")))
                     outputStr = asyncNN.NNInterface(image, outputpath, otp.type)
                     otpObj = Output.objects.select_for_update().get(id=otp.id)
-                    otpObj.outputStr = outputStr if "已完成, " + outputStr else "已完成"
+                    otpObj.outputStr = "已完成, " + outputStr if outputStr else "已完成"
                     otpObj.outputFilePath = outputpath
                     otpObj.process = 1
                     otpObj.save()
@@ -125,6 +133,8 @@ class asyncNN(threading.Thread):
                     done = 0
                     for image in self.images:
                         outputpath = path.join(outputFolder, path.relpath(image, path.join(MEDIA_ROOT, "upload")))
+                        if not path.exists(path.dirname(outputpath)):
+                            os.makedirs(path.dirname(outputpath))
                         oneStr = asyncNN.NNInterface(image, outputpath, otp.type)
                         done = done + 1
                         if oneStr:
@@ -133,7 +143,7 @@ class asyncNN(threading.Thread):
                         otpObj.outputStr = "运行中%d/%d%s" % (done, le, ", " + str(outputStrs) if len(outputStrs) > 0 else "")
                         otpObj.save()
                     otpObj = Output.objects.select_for_update().get(id=otp.id)
-                    otpObj.outputStr = "已完成" + (", " + str(outputStrs)) if len(outputStrs) > 0 else ""
+                    otpObj.outputStr = "已完成" + (", " + str(outputStrs)) if len(outputStrs) > 0 else "已完成"
                     otpObj.process = 1
                     otpObj.save()
                 else:
@@ -144,13 +154,13 @@ class asyncNN(threading.Thread):
 
     @staticmethod
     def NNInterface(inputPath, outputPath, operType):
-        from taskbank.tools.controller import work
-        work(NNList[operType]["param"], path.abspath(inputPath), path.abspath(outputPath), is_multi_task=NNList[operType]["isMultiInput"])
+        # from taskbank.tools.controller import work
+        # work(NNList[operType]["param"], path.abspath(inputPath), path.abspath(outputPath), is_multi_task=NNList[operType]["isMultiInput"])
 
-        # import time
-        # import shutil
-        # time.sleep(5)
-        # shutil.copyfile("image/download/示例.png", outputPath)
+        import time
+        import shutil
+        time.sleep(5)
+        shutil.copyfile("image/download/示例.png", outputPath)
 
 def subList(l, len, begin=0):
     r = []
@@ -162,3 +172,10 @@ def subList(l, len, begin=0):
         if c >= len:
             break
     return r
+
+import filetype
+def get_type2(mime=None, ext=None):
+    for kind in filetype.types:
+        if kind.extension == ext.lstrip(".") or kind.mime == mime:
+            return kind
+    return None

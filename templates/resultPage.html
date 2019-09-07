@@ -36,12 +36,13 @@
     处理结果：
     {% for one in ope.opers %}
     <div class="resItem">
-        <p style="font-size: 2em">
+        <span style="font-size: 2em">
             {{one.name}}：{% if one.outputStr %}{{one.outputStr}}{% endif %}
-            <form method="get" action="" style="display: none">
-                <div><input type="submit" value="下载结果文件" /></div>
-            </form>
-        </p>
+        </span>
+        <form method="get" action="" style="display: none">
+            <div><input type="submit" value="下载结果文件" /></div>
+        </form>
+
     </div>
     {% endfor %}
 
@@ -70,8 +71,11 @@
                 }
                 itemsList = $(".resItem");
                 for (let i = 0; i < jsonObj.opers.length; i++) {
-                    itemsList[i].getElementsByTagName("p")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
+                    itemsList[i].getElementsByTagName("span")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
                     imgItemList = itemsList[i].getElementsByTagName("img");
+                    formElement = itemsList[i].getElementsByTagName("form")[0];
+                    formElement.style.display = jsonObj.opers[i].outputDownload?"inline-block":"none";
+                    formElement.action = jsonObj.opers[i].outputDownload?jsonObj.opers[i].outputDownload:"";
                     let j;
                     for(j=0;j<Math.min(imgItemList.length, jsonObj.opers[i].outputFileUrls.length);j++){
                         imgItemList[j].src = jsonObj.opers[i].outputFileUrls[j];
@@ -84,9 +88,7 @@
                     for(;j<imgItemList.length;j++){
                         itemsList[i].removeChild(imgItemList[j])
                     }
-                    formElement = itemsList[i].getElementsByTagName("p")[0].getElementsByTagName("form")[0];
-                    formElement.style.display = jsonObj.opers[i].outputDownload?"inline-block":"none";
-                    formElement.action = jsonObj.opers[i].outputDownload?jsonObj.opers[i].outputDownload:"";
+
                 }
             },
             fail(res) {

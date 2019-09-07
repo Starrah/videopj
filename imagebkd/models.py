@@ -17,7 +17,7 @@ class Operation(models.Model):
 
 
 class InputFile(models.Model):
-    input = models.ImageField(upload_to=determineUpload)
+    input = models.ImageField()
     oper = models.ForeignKey(Operation, on_delete=models.CASCADE)
 
 
@@ -29,13 +29,23 @@ class Output(models.Model):
     oper = models.ForeignKey(Operation, on_delete=models.CASCADE)
     process = models.PositiveSmallIntegerField(default=0)
 
+def generateChoiceList():
+    from .apiutils import NNList
+    res = []
+    c = 0
+    for nn in NNList:
+        res.append((c, nn["name"]))
+        c = c + 1
+    return res
+
 class OperationSubmitForm(forms.Form):
+
     input = forms.fields.FileField(required=False, label="选择文件", widget=forms.FileInput(attrs={'multiple': True}))
     inputUrl = forms.fields.URLField(required=False, label="或输入图片的Url")
     tocall = forms.fields.MultipleChoiceField(
-        choices=((0, "A"), (1, "B"), (2, "C"),),
+        choices=generateChoiceList(),
         label="执行的算法",
-        initial=[0,1,2],
+        initial=[],
         widget=forms.widgets.CheckboxSelectMultiple()
     )
 
