@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+import utils
+import init_paths
 
 import argparse
 import importlib
@@ -7,7 +9,6 @@ import matplotlib
 
 matplotlib.use('Agg')
 import time
-from multiprocessing import Pool
 import numpy as np
 import os
 import pdb
@@ -18,25 +19,24 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import threading
 import scipy.misc
-from skimage import color
-import init_paths
-from models.sample_models import *
-from lib.data.synset import *
+
 import scipy
 import skimage
 import skimage.io
 import transforms3d
 import math
 import matplotlib.pyplot as plt
+import random
+import models.architectures as architectures
+import lib.data.load_ops as load_ops
+from multiprocessing import Pool
+from skimage import color
+from models.sample_models import *
+from lib.data.synset import *
 from PIL import Image, ImageDraw, ImageFont
 from task_viz import *
-import random
-import utils
-import models.architectures as architectures
 from data.load_ops import resize_rescale_image
 from data.load_ops import rescale_image
-import utils
-import lib.data.load_ops as load_ops
 
 parser = argparse.ArgumentParser(description='Viz Single Task')
 
@@ -70,7 +70,7 @@ list_of_tasks = list_of_tasks.split()
 def generate_cfg(task):
     repo_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     CONFIG_DIR = os.path.join(repo_dir, 'experiments/final', task)
-    ############## Load Configs ##############
+    # Load Configs #
     import utils
     import data.load_ops as load_ops
     from general_utils import RuntimeDeterminedEnviromentVars
@@ -91,7 +91,6 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
                 store_name=args.store_name):
     import general_utils
     from general_utils import RuntimeDeterminedEnviromentVars
-
     tf.logging.set_verbosity(tf.logging.ERROR)
 
     if task == 'ego_motion' and len(imgs) != 3:
@@ -118,7 +117,7 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
     tf.reset_default_graph()
     training_runners = {'sess': tf.InteractiveSession(), 'coord': tf.train.Coordinator()}
 
-    ############## Set Up Inputs ##############
+    # Set Up Inputs #
     # tf.logging.set_verbosity( tf.logging.INFO )
     setup_input_fn = utils.setup_input
     inputs = setup_input_fn(cfg, is_training=False, use_filename_queue=False)
@@ -126,7 +125,7 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
     RuntimeDeterminedEnviromentVars.populate_registered_variables()
     start_time = time.time()
 
-    ############## Set Up Model ##############
+    # Set Up Model #
     model = utils.setup_model(inputs, cfg, is_training=False)
     m = model['model']
     model['saver_op'].restore(training_runners['sess'], cfg['model_path'])
@@ -157,12 +156,12 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
         prediction = np.argmax(predicted, axis=1)
         print('the prediction (1 stands for match, 0 for unmatch)is: ', prediction)
         return
-        ############## Clean Up ##############
+        # Clean Up #
     training_runners['coord'].request_stop()
     training_runners['coord'].join()
     print("Done: {}".format(config_name))
 
-    ############## Reset graph and paths ##############            
+    # Reset graph and paths #
     tf.reset_default_graph()
     training_runners['sess'].close()
     return
