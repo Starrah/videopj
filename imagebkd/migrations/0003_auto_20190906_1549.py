@@ -3,6 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import imagebkd.apiutils
+import imagebkd.fileutils
 
 
 class Migration(migrations.Migration):
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
             name='InputFile',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('input', models.ImageField(upload_to=imagebkd.apiutils.determineUpload)),
+                ('input', models.ImageField(upload_to=imagebkd.fileutils.determineUpload)),
                 ('oper', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='imagebkd.Operation')),
             ],
         ),

@@ -28,12 +28,15 @@
             {% endif %}
         </h1>
     </div>
+    <div>
     输入图片：
     {% for input in ope.inputs %}
     <img src="{{input.url}}"  alt="图片加载中" />
     {% endfor %}
-
+    </div>
+    <div>
     处理结果：
+    </div>
     {% for one in ope.opers %}
     <div class="resItem">
         <span style="font-size: 2em">
@@ -42,20 +45,13 @@
         <form method="get" action="" style="display: none">
             <div><input type="submit" value="下载结果文件" /></div>
         </form>
-
     </div>
     {% endfor %}
-
-    <form method="get" action="uploadPage">
-        <div>
-            <input type="submit" value="返回上传页面" />
-        </div>
-    </form>
-
 
 </body>
 
 <script>
+    var timerId = 0;
     operId = {{ope.id}}
     function requestChange() {
         $.ajax(`queryResult?id=${operId}`, {
@@ -88,10 +84,10 @@
                     for(;j<imgItemList.length;j++){
                         itemsList[i].removeChild(imgItemList[j])
                     }
-
                 }
             },
             fail(res) {
+                console.log(res);
                 eval(res);
                 if(timerId)clearInterval(timerId)
             }

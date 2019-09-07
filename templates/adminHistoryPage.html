@@ -33,7 +33,9 @@
 
     <div>
         <form method="post" action="delete">
-            点击对应链接可进入查看详细信息；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除记录。<br><br>
+            <p style="font-size: 1.5em">点击对应链接可进入查看详细信息；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除记录。</p>
+            <br>
+            <div style="font-size: 2em">
             序号 删除 编号 所属用户 创建时间 状态
         {% for l in data.list %}
         <div>
@@ -49,6 +51,7 @@
             {% endif %}
         </div>
         {% endfor %}
+            </div>
         </form>
     </div>
     <div>

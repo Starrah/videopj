@@ -1,168 +1,78 @@
+import math
 from django.http import HttpResponse, HttpRequest
-import threading
-from PIL import Image
-import time
-import random
-from os import path
+from imagebkd.fileutils import getFilesListOrZip, getForDownloadPath
+from imagebkd.models import Operation
+from imagebkd.nnadapter import NNList
+from imagebkd.views import MOST_PIC_SHOW_RES
+
+RECORD_PER_PAGE = 10
 
 
-def getExtName(fileName: str, withdot=True):
-    a = path.splitext(fileName)
-    return ("." if withdot else "") + (a[1].lstrip(".") if a[1] != "" else a[0].lstrip("."))
-
-
-
-def determineUpload(instance, fileName):
-    saveDir = "upload"
-    millis = int(round(time.time() * 1000))
-    ran = random.randint(0, 9999999)
-    extname = getExtName(fileName)
-    name = str(millis) + "_" + str(ran) + extname
-    toSave = path.join(saveDir, name)
-    if path.exists(toSave):
-        return determineUpload(instance, fileName)
-    else:
-        return toSave
-
-
+# 接口校验与返回
 class RequestHandleFailException(Exception):
-    def __init__(self, to_statusCode=200, to_resp="", redirect = None):
+    def __init__(self, to_statusCode=400, to_resp="", redirect=None):
         self.to_statusCode = to_statusCode
         self.to_resp = to_resp
         self.to_redi = redirect
 
 
-def determineDownload(instance, fileName):
-    saveDir = "download"
-    millis = int(round(time.time() * 1000))
-    ran = random.randint(0, 9999999)
-    extname = getExtName(fileName) if fileName else ""
-    name = str(millis) + "_" + str(ran) + extname
-    toSave = path.join(saveDir, name)
-    if path.exists(toSave):
-        return determineUpload(instance, fileName)
-    else:
-        return toSave
+def AlertResponse(text: str, status=200, redirect=None):
+    toRes = "<script>alert(\"" + text + "\");"
+    if redirect != None:
+        if (redirect[0] != "\"" or redirect[-1] != "\""):
+            redirect = "\"" + redirect + "\""
+        toRes += ("window.location.href = " + redirect + ";")
+    toRes += "</script>"
+    return HttpResponse(toRes, status=status)
 
 
-def getKeyOrRaiseBlankRHFE(obj, key, errStr="invalid parameters"):
+def getKeyOrRaiseBlankRHFE(obj, key, errStr="无效的输入参数"):
     if type(key) == list:
         resList = []
         for k in key:
             try:
                 r = obj[k]
                 if r == "" or r is None:
-                    raise RequestHandleFailException(200, errStr)
+                    raise RequestHandleFailException(400, errStr)
                 resList.append(r)
             except KeyError:
-                raise RequestHandleFailException(200, errStr)
+                raise RequestHandleFailException(400, errStr)
         return resList
     else:
         try:
             r = obj[key]
             if r == "" or r is None:
-                raise RequestHandleFailException(200, errStr)
+                raise RequestHandleFailException(400, errStr)
         except KeyError:
-            raise RequestHandleFailException(200, errStr)
+            raise RequestHandleFailException(400, errStr)
         return r
 
 
-def assertRequestMethod(req: HttpRequest, method: str, errStr="错误的请求方法！"):
+def assertKeyExist(key: str, form):
+    d = form.__dict__["data"]
+    return (key in d) and d[key] != ""
+
+
+def assertRequestMethod(req: HttpRequest, method: str, errStr="错误的请求方法"):
     if req.method != method:
         raise RequestHandleFailException(405, errStr)
 
 
+def assertUser(req: HttpRequest, aimUser=None, allowSuperUser=True):
+    user = req.user
+    if user.is_anonymous:
+        raise RequestHandleFailException(403, "您还没有登录！")
+    if not (((not aimUser) or user == aimUser) or (allowSuperUser and user.is_superuser)):
+        raise RequestHandleFailException(403, "您无权限执行此操作！")
 
-def AlertResponse(text: str, status=200, redirect = None):
-    toRes = "<script>alert(\""+ text +"\");"
-    if redirect != None:
-        if(redirect[0] != "\"" or redirect[-1] != "\""):
-            redirect = "\"" + redirect + "\""
-        toRes += ("window.location.href = " + redirect + ";")
-    toRes += "</script>"
-    return HttpResponse(toRes, status=status)
-import os
-NNList = [{"name": "Autoencoder", "param": "autoencoder", "isMultiInput": False}, {"name": "Curvatures", "param": "curvature", "isMultiInput": False}, {"name": "Colorization", "param": "colorization", "isMultiInput": False}, {"name": "Denoising-Autoencoder", "param": "denoise", "isMultiInput": False}, {"name": "Depth", "param": "rgb2depth", "isMultiInput": False}, {"name": "Edge-2D", "param": "edge2d", "isMultiInput": False}, {"name": "Edge-3D", "param": "edge3d", "isMultiInput": False}, {"name": "Euclidean-Distance", "param": "rgb2mist", "isMultiInput": False}, {"name": "Inpainting", "param": "inpainting_whole", "isMultiInput": False}, {"name": "Jigsaw-Puzzle", "param": "jigsaw", "isMultiInput": False}, {"name": "Keypoint-2D", "param": "keypoint2d", "isMultiInput": False}, {"name": "Keypoint-3D", "param": "keypoint3d", "isMultiInput": False}, {"name": "Object-Classification", "param": "class_1000", "isMultiInput": False}, {"name": "Reshading", "param": "reshade", "isMultiInput": False}, {"name": "Room-Layout", "param": "room_layout", "isMultiInput": False}, {"name": "Scene-Classification", "param": "class_places", "isMultiInput": False}, {"name": "Segmentation-2D", "param": "segment2d", "isMultiInput": False}, {"name": "Segmentation-3D", "param": "segment25d", "isMultiInput": False}, {"name": "Segmentation-Semantic", "param": "segmentsemantic", "isMultiInput": False}, {"name": "Surface-Normal", "param": "rgb2sfnorm", "isMultiInput": False}, {"name": "Vanishing-Point", "param": "vanishing_point", "isMultiInput": False}, {"name": "Pairwise-Nonfixated-Camera-Pose", "param": "non_fixated_pose", "isMultiInput": True}, {"name": "Pairwise-Fixated-Camera-Pose", "param": "fix_pose", "isMultiInput": True}, {"name": "Triplet-Fixated-Camera-Pose", "param": "ego_motion", "isMultiInput": True}, {"name": "Point-Matching", "param": "point_match", "isMultiInput": True}]
-from videopj.settings import MEDIA_ROOT
-class asyncNN(threading.Thread):
-    def __init__(self, images: list, operTypes: list, operObj):
-        from .models import Output
-        super().__init__()
-        self.images = images
-        if(len(operTypes) <= 0):
-            raise RequestHandleFailException(400, "您没有选择任何一个要执行的算法，因此无法完成操作。请重新选择。")
-        self.operTypes = operTypes
-        self.operObj = operObj
-        self.otpList = []
-        for oneOper in self.operTypes:
-            output = Output(type=int(oneOper), oper=self.operObj)
-            output.save()
-            self.otpList.append(output)
 
-    def run(self):
-        from .models import Operation, Output
-        for otp in self.otpList:
-            if NNList[otp.type]["isMultiInput"]:
-                inputpath = ",".join(self.images)
-                outputpath = path.join(MEDIA_ROOT, "download", path.relpath(self.images[0], path.join(MEDIA_ROOT, "upload")))
-                outputStr = asyncNN.NNInterface(inputpath, outputpath, otp.type)
-                otpObj = Output.objects.select_for_update().get(id=otp.id)
-                otpObj.outputStr = outputStr if outputStr else "已完成"
-                otpObj.outputFilePath = outputpath
-                otpObj.save()
-            else:
-                le = len(self.images)
-                if le == 1:
-                    image = self.images[0]
-                    outputpath = path.join(MEDIA_ROOT, "download", path.relpath(image, path.join(MEDIA_ROOT, "upload")))
-                    outputStr = asyncNN.NNInterface(image, outputpath, otp.type)
-                    otpObj = Output.objects.select_for_update().get(id=otp.id)
-                    otpObj.outputStr = "已完成, " + outputStr if outputStr else "已完成"
-                    otpObj.outputFilePath = outputpath
-                    otpObj.process = 1
-                    otpObj.save()
-                elif le >= 2:
-                    outputFolder = path.join(MEDIA_ROOT, determineDownload(None, None))
-                    if not path.exists(outputFolder):
-                        os.makedirs(outputFolder)
-                    otpObj = Output.objects.select_for_update().get(id=otp.id)
-                    otpObj.outputStr = "运行中%d/%d"%(0, le)
-                    otpObj.outputFilePath = outputFolder
-                    otpObj.save()
-                    outputStrs = []
-                    done = 0
-                    for image in self.images:
-                        outputpath = path.join(outputFolder, path.relpath(image, path.join(MEDIA_ROOT, "upload")))
-                        if not path.exists(path.dirname(outputpath)):
-                            os.makedirs(path.dirname(outputpath))
-                        oneStr = asyncNN.NNInterface(image, outputpath, otp.type)
-                        done = done + 1
-                        if oneStr:
-                            outputStrs.append(oneStr)
-                        otpObj = Output.objects.select_for_update().get(id=otp.id)
-                        otpObj.outputStr = "运行中%d/%d%s" % (done, le, ", " + str(outputStrs) if len(outputStrs) > 0 else "")
-                        otpObj.save()
-                    otpObj = Output.objects.select_for_update().get(id=otp.id)
-                    otpObj.outputStr = "已完成" + (", " + str(outputStrs)) if len(outputStrs) > 0 else "已完成"
-                    otpObj.process = 1
-                    otpObj.save()
-                else:
-                    raise RequestHandleFailException(400, "没有有效的可操作文件！")
-        self.operObj = Operation.objects.select_for_update().get(id=self.operObj.id)
-        self.operObj.process = 1
-        self.operObj.save()
+def assertSuperUser(req: HttpRequest):
+    if not req.user.is_superuser:
+        raise RequestHandleFailException(403, "您无权限执行此操作！")
 
-    @staticmethod
-    def NNInterface(inputPath, outputPath, operType):
-        # from taskbank.tools.controller import work
-        # work(NNList[operType]["param"], path.abspath(inputPath), path.abspath(outputPath), is_multi_task=NNList[operType]["isMultiInput"])
-
-        import time
-        import shutil
-        time.sleep(5)
-        shutil.copyfile("image/download/示例.png", outputPath)
 
 def subList(l, len, begin=0):
+    """选取列表中从begin开始的，不超过len个元素，构成新列表"""
     r = []
     c = 0
     for n in l:
@@ -173,9 +83,37 @@ def subList(l, len, begin=0):
             break
     return r
 
-import filetype
-def get_type2(mime=None, ext=None):
-    for kind in filetype.types:
-        if kind.extension == ext.lstrip(".") or kind.mime == mime:
-            return kind
-    return None
+
+# 根据数据库的最新记录产生输出结构以便完成渲染页面和ajax的输出
+def validateOutputStatus(model: Operation):
+    otps = model.output_set.all()
+    otpList = []
+    for otp in otps:
+        otpData = {
+            "name": NNList[otp.type]["name"],
+            "outputStr": otp.outputStr
+        }
+        otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
+        otpData["outputFileUrls"] = getForDownloadPath(otpRawList, MOST_PIC_SHOW_RES)
+        otpData["outputDownload"] = getForDownloadPath(otpRawDown)
+        otpList.append(otpData)
+    return otpList
+
+
+# 完成分页显示的分页工作
+def generatePageInfo(query, page, recordInOnePage=RECORD_PER_PAGE):
+    total = len(query)
+    totalPage = math.ceil(total / recordInOnePage)
+    resDict = {
+        "total": total,
+        "totalPage": totalPage,
+        "curPage": page
+    }
+    if not 1 <= page - 1 <= totalPage:
+        resDict["noLast"] = 1
+    if not 1 <= page + 1 <= totalPage:
+        resDict["noNext"] = 1
+    pageRange = range((page - 1) * recordInOnePage, min(page * recordInOnePage, total)) if totalPage > 0 else []
+    if totalPage > 0 and (page <= 0 or page > totalPage):
+        raise RequestHandleFailException(400, "页码无效", "history")
+    return resDict, total, totalPage, pageRange

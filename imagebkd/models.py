@@ -1,11 +1,13 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django import forms
-from .apiutils import determineUpload
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+
 
 # Create your models here.
-class User(AbstractUser):
+from imagebkd.modelutils import generateChoiceList
 
+
+class User(AbstractUser):
     class Meta(AbstractUser.Meta):
         pass
 
@@ -29,19 +31,10 @@ class Output(models.Model):
     oper = models.ForeignKey(Operation, on_delete=models.CASCADE)
     process = models.PositiveSmallIntegerField(default=0)
 
-def generateChoiceList():
-    from .apiutils import NNList
-    res = []
-    c = 0
-    for nn in NNList:
-        res.append((c, nn["name"]))
-        c = c + 1
-    return res
 
 class OperationSubmitForm(forms.Form):
-
-    input = forms.fields.FileField(required=False, label="选择文件", widget=forms.FileInput(attrs={'multiple': True}))
-    inputUrl = forms.fields.URLField(required=False, label="或输入图片的Url")
+    input = forms.fields.FileField(required=False, label="选择文件", widget=forms.FileInput(attrs={'multiple': True, "accept": "image/*,application/zip"}))
+    inputUrl = forms.fields.URLField(required=False, label="或输入图片的Url（多个url请以;隔开）")
     tocall = forms.fields.MultipleChoiceField(
         choices=generateChoiceList(),
         label="执行的算法",
