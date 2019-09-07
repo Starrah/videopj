@@ -29,15 +29,19 @@
         </h1>
     </div>
     输入图片：
-    <img src="{{ope.input.url}}"  alt="图片加载中" />
+    {% for input in ope.inputs %}
+    <img src="{{input.url}}"  alt="图片加载中" />
+    {% endfor %}
 
     处理结果：
     {% for one in ope.opers %}
     <div class="resItem">
         <p style="font-size: 2em">
             {{one.name}}：{% if one.outputStr %}{{one.outputStr}}{% endif %}
+            <form method="get" action="" style="display: none">
+                <div><input type="submit" value="下载结果文件" /></div>
+            </form>
         </p>
-        <img src="{% if one.outputFileUrl %}{{one.outputFileUrl}}{% endif %}"  alt="" />
     </div>
     {% endfor %}
 
@@ -55,7 +59,6 @@
     function requestChange() {
         $.ajax(`queryResult?id=${operId}`, {
             success(res) {
-                console.log(res);
                 jsonObj = res;
                 statusStr = $("#status")[0];
                 if(res.status === 0){
@@ -67,9 +70,23 @@
                 }
                 itemsList = $(".resItem");
                 for (let i = 0; i < jsonObj.opers.length; i++) {
-                    console.log(jsonObj.opers[i]);
                     itemsList[i].getElementsByTagName("p")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
-                    itemsList[i].getElementsByTagName("img")[0].src = jsonObj.opers[i].outputFileUrl ? jsonObj.opers[i].outputFileUrl : "";
+                    imgItemList = itemsList[i].getElementsByTagName("img");
+                    let j;
+                    for(j=0;j<Math.min(imgItemList.length, jsonObj.opers[i].outputFileUrls.length);j++){
+                        imgItemList[j].src = jsonObj.opers[i].outputFileUrls[j];
+                    }
+                    for(;j<jsonObj.opers[i].outputFileUrls.length;j++){
+                        let newElement = document.createElement("img")
+                        newElement.src = jsonObj.opers[i].outputFileUrls[j];
+                        itemsList[i].appendChild(newElement)
+                    }
+                    for(;j<imgItemList.length;j++){
+                        itemsList[i].removeChild(imgItemList[j])
+                    }
+                    formElement = itemsList[i].getElementsByTagName("p")[0].getElementsByTagName("form")[0];
+                    formElement.style.display = jsonObj.opers[i].outputDownload?"inline-block":"none";
+                    formElement.action = jsonObj.opers[i].outputDownload?jsonObj.opers[i].outputDownload:"";
                 }
             },
             fail(res) {

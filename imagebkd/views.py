@@ -1,8 +1,9 @@
+from videopj.settings import MEDIA_ROOT
 from django.contrib.auth.hashers import make_password
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from .models import User, OperationSubmitForm, Operation, TimeForm
+from .models import User, OperationSubmitForm, Operation, TimeForm, InputFile, Output
 from django.contrib import auth
-from .apiutils import RequestHandleFailException, getKeyOrRaiseBlankRHFE, AlertResponse, assertRequestMethod, asyncNN
+from .apiutils import RequestHandleFailException, getKeyOrRaiseBlankRHFE, AlertResponse, assertRequestMethod, asyncNN, subList
 from django.shortcuts import render_to_response, redirect
 
 import requests
@@ -73,23 +74,76 @@ from django.db.models.fields.files import ImageFieldFile
 from django.core.files import File
 import random
 import os
-def saveImageFieldFileFromUrl(url: str, imageFieldFile: ImageFieldFile):
-    from .models import determineUpload
+from .models import determineUpload
+import zipfile
+import filetype
+
+def unzipAllChooseImages(zipPath):
+    exts = os.path.splitext(zipPath)
+    foldername = exts[0]
+    if len(exts) < 2 or exts[1] != ".zip":
+        os.rename(zipPath, foldername+".zip")
+    zipPath = foldername+".zip"
+    with zipfile.ZipFile(zipPath, 'r') as zipf:
+        zipf.extractall(path=foldername)
+    res = []
+    for root, dirs, files in os.walk(foldername):
+        for file in files:
+            realPath = os.path.join(root, file)
+            kind = filetype.image(realPath)
+            if kind:
+                res.append(realPath)
+    if len(res) <= 0:
+        os.remove(zipPath)
+        os.remove(foldername)
+        raise RequestHandleFailException(400, "上传的压缩包中不含有任何的图片类型文件，因此无法处理")
+    return res, foldername
+
+
+# def generateTempfileName(extname):
+#     ran = random.randint(0, 9999999)
+#     name = str(ran) + extname
+#     toSave = os.path.join("image", "temp", name)
+#     if os.path.exists(toSave):
+#         return generateTempfileName(extname)
+#     return toSave
+
+
+def assertFileType(content_type=None, name = None):
+    if content_type == "application/zip" or filetype.guess_mime(name) == "application/zip":
+        return "zip", ".zip"
+    elif (content_type and content_type.find("image") == 0) or filetype.image(name):
+        return "img", filetype.get_type(content_type, os.path.splitext(name)[1]).extension
+    else:
+        raise RequestHandleFailException(400, "输入的文件不是支持的图片或zip类型！")
+
+
+def saveImageFieldFileFromUrl(url: str, oper: Operation):
+    oper.save()
     r = requests.get(url, stream=True)
     r.raise_for_status()
-    ran = random.randint(0, 9999999)
-    extname = os.path.splitext(url)[1]
-    name = str(ran) + extname
-    toSave = os.path.join("image", "temp", name)
-    if os.path.exists(toSave):
-        return saveImageFieldFileFromUrl(url, imageFieldFile)
+    ftype, extname = assertFileType(r.headers["Content-Type"] if "Content-Type" in r.headers else None, url)
+    toSave = os.path.join(MEDIA_ROOT, determineUpload(None, extname))
     with open(toSave, "wb") as f:
-        for chunk in r.iter_content(chunk_size=1024*1024):
+        for chunk in r.iter_content(chunk_size=1024 * 1024):
             if chunk:
                 f.write(chunk)
-    with open(toSave, "rb") as f:
-        imageFieldFile.save(determineUpload(None, toSave), File(f), False)
-    os.remove(toSave)
+    if ftype == "zip":
+        pathList, dirname = unzipAllChooseImages(toSave)
+        for p in pathList:
+            saveImageFieldFile(p, InputFile(oper=oper).input, chosenName=os.path.relpath(p, MEDIA_ROOT))
+    elif ftype == "img":
+        saveImageFieldFile(toSave, InputFile(oper=oper).input, chosenName=os.path.relpath(toSave, MEDIA_ROOT))
+
+
+def saveImageFieldFile(f, imageFieldFile: ImageFieldFile, chosenName=None):
+    if isinstance(f, File):
+        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), f, False)
+    elif isinstance(f, str) or isinstance(f, bytes):
+        with open(f, "rb") as ff:
+            imageFieldFile.save(chosenName if chosenName else determineUpload(None, ff.name), File(ff), False)
+    else:
+        imageFieldFile.save(chosenName if chosenName else determineUpload(None, f.name), File(f), False)
 
 
 
@@ -100,16 +154,35 @@ def upload(req: HttpRequest):
     if not user.is_anonymous:
         form = OperationSubmitForm(req.POST, req.FILES)
         if form.is_valid():
-            form.instance.user = user
-            if not form["input"].data:
-                if form["inputUrl"].data != "":
-                    saveImageFieldFileFromUrl(form["inputUrl"].data, form.instance.input)
+            oper = Operation(user=user)
+            oper.save()
+            if not form.cleaned_data["input"]:
+                if form.cleaned_data["inputUrl"] != "":
+                    urllist = form["inputUrl"].data.split(";")
+                    for url in urllist:
+                        saveImageFieldFileFromUrl(url, oper)
                 else:
                     raise RequestHandleFailException(400, "必须上传文件或指定文件Url")
-            elif form["inputUrl"].data != "":
-                raise RequestHandleFailException(400, "不能同时上传文件和指定文件Url")
-            form.save()
-            asyncNN(Image.open(form.instance.input.path), form["tocall"].data, form.instance).start()
+            else:
+                if form.cleaned_data["inputUrl"] == "":
+                    filelist = req.FILES.getlist("input")
+                    for f in filelist:
+                        ftype, extname = assertFileType(f.content_type, f.name)
+                        if ftype == "zip":
+                            toSave = os.path.join(MEDIA_ROOT, determineUpload(None, extname))
+                            with open(toSave, "wb") as ff:
+                                for chunk in f.chunks(chunk_size=1024*1024):
+                                    if chunk:
+                                        f.write(chunk)
+                            pathList, dirname = unzipAllChooseImages(toSave)
+                            for p in pathList:
+                                saveImageFieldFile(p, InputFile(oper=oper).input, chosenName=os.path.relpath(p, MEDIA_ROOT))
+                        elif ftype == "img":
+                            saveImageFieldFile(f, InputFile(oper=oper).input)
+                else:
+                    raise RequestHandleFailException(400, "不能同时上传文件和指定文件Url")
+            oper.save()
+            asyncNN(list(map(lambda x: x.input.path, oper.inputfile_set.all())), form.cleaned_data["tocall"], oper).start()
             return redirect("/resultPage?id=" + str(form.instance.id))
         else:
             raise RequestHandleFailException(400, "输入的文件或Url无效")
@@ -125,12 +198,46 @@ def test2(req: HttpRequest):
     return HttpResponse("qwq")
 
 
-def getForDownloadPath(pathStr: str):
-    import re
-    from os import path
-    relaPath =  re.sub(r".*image[/|\\]download[/|\\]", "", pathStr)
-    sep = path.sep
-    return sep + "image" + sep + "download" + sep + relaPath
+def getFilesListOrZip(pathStr: str, enableZip: bool):
+    if not (pathStr and pathStr != ""):
+        return None, []
+    if os.path.isdir(pathStr):
+        zipFileName = None
+        if enableZip > 0:
+            zipFileName = pathStr + ".zip"
+            if not os.path.exists(zipFileName):
+                with zipfile.ZipFile(zipFileName, 'wb', compression=zipfile.ZIP_DEFLATED) as zipf:
+                    for root, dirs, files in os.walk(pathStr):
+                        for filename in files:
+                            pathfile = os.path.join(root, filename)
+                            relapath = os.path.relpath(pathfile, pathStr)
+                            zipf.write(pathfile, relapath)
+        res = []
+        for root, dirs, files in os.walk(pathStr):
+            for file in files:
+                realPath = os.path.join(root, file)
+                kind = filetype.image(realPath)
+                if kind:
+                    res.append(realPath)
+        return zipFileName, res
+    else:
+        return pathStr, [pathStr]
+
+
+def getForDownloadPath(p, most=0):
+    if isinstance(p, list):
+        l = list(map(lambda x:os.path.join("image/download", os.path.relpath(x, "image/download")), p))
+        if most > 0:
+            l = subList(l, most)
+        return l
+    else:
+        p = os.path.join("image/download", os.path.relpath(p, "image/download"))
+        return p
+
+
+
+MOST_PIC_SHOW_INPUT = 5
+MOST_PIC_SHOW_RES = 5
 
 
 def resultPage(req: HttpRequest):
@@ -148,17 +255,18 @@ def resultPage(req: HttpRequest):
             "id": model.id,
             "status": model.process,
             "time": model.time,
-            "input": model.input,
+            "inputs": list(map(lambda x: x.input, subList(model.inputfile_set.all(), MOST_PIC_SHOW_INPUT)))
         }
         otps = model.output_set.all()
         otpList = []
         for otp in otps:
             otpData = {
                 "name": "hhh",
-                "outputStr": otp.outputStr,
+                "outputStr": otp.outputStr
             }
-            if otp.outputFilePath and otp.outputFilePath != "":
-                otpData["outputFileUrl"] = getForDownloadPath(otp.outputFilePath)
+            otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
+            otpData["outputFileUrls"] = getForDownloadPath(otpRawList, MOST_PIC_SHOW_RES)
+            otpData["outputDownload"] = getForDownloadPath(otpRawDown)
             otpList.append(otpData)
         res["opers"] = otpList
         return render_to_response("resultPage.html", {"ope": res})
@@ -180,17 +288,18 @@ def queryResult(req: HttpRequest):
         res = {
             "id": model.id,
             "status": model.process,
-            "inputUrl": model.input.url,
         }
         otps = model.output_set.all()
         otpList = []
+        otpDict = {}
         for otp in otps:
             otpData = {
                 "name": "hhh",
-                "outputStr": otp.outputStr,
+                "outputStr": otp.outputStr
             }
-            if otp.outputFilePath and otp.outputFilePath != "":
-                otpData["outputFileUrl"] = getForDownloadPath(otp.outputFilePath)
+            otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
+            otpData["outputFileUrls"] = getForDownloadPath(otpRawList, MOST_PIC_SHOW_RES)
+            otpData["outputDownload"] = getForDownloadPath(otpRawDown)
             otpList.append(otpData)
         res["opers"] = otpList
         return JsonResponse(res)
