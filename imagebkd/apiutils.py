@@ -1,9 +1,6 @@
 import math
 from django.http import HttpResponse, HttpRequest
-from imagebkd.fileutils import getFilesListOrZip, getForDownloadPath
-from imagebkd.models import Operation
-from imagebkd.nnadapter import NNList
-from imagebkd.views import MOST_PIC_SHOW_RES
+
 
 RECORD_PER_PAGE = 10
 
@@ -85,7 +82,10 @@ def subList(l, len, begin=0):
 
 
 # 根据数据库的最新记录产生输出结构以便完成渲染页面和ajax的输出
-def validateOutputStatus(model: Operation):
+def validateOutputStatus(model):
+    from imagebkd.views import MOST_PIC_SHOW_RES
+    from imagebkd.nnadapter import NNList
+    from .fileutils import getFilesListOrZip, getForDownloadPath
     otps = model.output_set.all()
     otpList = []
     for otp in otps:
@@ -93,7 +93,7 @@ def validateOutputStatus(model: Operation):
             "name": NNList[otp.type]["name"],
             "outputStr": otp.outputStr
         }
-        otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, True if otp.process else False)
+        otpRawDown, otpRawList = getFilesListOrZip(otp.outputFilePath, otp, True if otp.process else False)
         otpData["outputFileUrls"] = getForDownloadPath(otpRawList, MOST_PIC_SHOW_RES)
         otpData["outputDownload"] = getForDownloadPath(otpRawDown)
         otpList.append(otpData)

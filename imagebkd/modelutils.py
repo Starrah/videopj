@@ -1,7 +1,5 @@
 from datetime import datetime
-
 from imagebkd.apiutils import RequestHandleFailException, assertKeyExist
-from imagebkd.models import TimeForm
 
 
 def getAllOpers(user):
@@ -22,7 +20,7 @@ def generateChoiceList():
     return res
 
 
-def getInfoFromTimeForm(form: TimeForm):
+def getInfoFromTimeForm(form):
     if not form.is_valid():
         raise RequestHandleFailException(400, "输入的查询参数无效，请检查", "history")
     fd = form.__dict__["data"]

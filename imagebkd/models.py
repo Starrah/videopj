@@ -32,6 +32,11 @@ class Output(models.Model):
     process = models.PositiveSmallIntegerField(default=0)
 
 
+class MoreOutputFile(models.Model):
+    filePath = models.TextField()
+    output = models.ForeignKey(Output, on_delete=models.CASCADE)
+
+
 class OperationSubmitForm(forms.Form):
     input = forms.fields.FileField(required=False, label="选择文件", widget=forms.FileInput(attrs={'multiple': True, "accept": "image/*,application/zip"}))
     inputUrl = forms.fields.URLField(required=False, label="或输入图片的Url（多个url请以;隔开）")

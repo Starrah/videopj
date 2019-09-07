@@ -22,6 +22,7 @@ from .settings import MEDIA_ROOT
 
 urlpatterns = [
     path('sysAdmin/', admin.site.urls),
+    re_path(r"^$", views.indexRedi),
     re_path(r'^image/(?P<path>.*)', serve, {"document_root": MEDIA_ROOT}),
     re_path(r"^login$", views.login),
     re_path(r"^logon$", views.logon),

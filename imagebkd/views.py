@@ -127,7 +127,8 @@ def resultPage(req: HttpRequest):
         "status": model.process,
         "time": model.time,
         "inputs": list(map(lambda x: x.input, subList(model.inputfile_set.all(), MOST_PIC_SHOW_INPUT))),
-        "opers": validateOutputStatus(model)
+        "opers": validateOutputStatus(model),
+        "toomany": model.inputfile_set.count() > MOST_PIC_SHOW_INPUT
     }
     return render_to_response("resultPage.html", {"ope": res})
 
@@ -152,7 +153,7 @@ def history(req: HttpRequest):
     assertRequestMethod(req, "GET")
     assertUser(req)
     form = TimeForm(req.GET)
-    curPage, page, begin, end = getInfoFromTimeForm(form)
+    curPage, page, begin, end, username = getInfoFromTimeForm(form)
     user = req.user
     if begin and end:
         query = user.operation_set.filter(time__range=(begin, end))
@@ -235,7 +236,7 @@ def adminHistory(req: HttpRequest):
 def adminUser(req: HttpRequest):
     assertRequestMethod(req, "GET")
     form = TimeForm(req.GET)
-    curPage, page, begin, end = getInfoFromTimeForm(form)
+    curPage, page, begin, end, username = getInfoFromTimeForm(form)
     assertSuperUser(req)
     if begin and end:
         query = User.objects.filter(last_login__range=(begin, end))
@@ -278,3 +279,10 @@ def adminRedi(req: HttpRequest):
     assertRequestMethod(req, "GET")
     assertSuperUser(req)
     return redirect("/adminHistory")
+
+
+def indexRedi(req: HttpRequest):
+    if req.user.is_anonymous:
+        return redirect("/loginPage")
+    else:
+        return redirect("/uploadPage")

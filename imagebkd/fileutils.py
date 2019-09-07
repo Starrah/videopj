@@ -8,7 +8,7 @@ import requests
 from django.core.files import File
 from django.db.models.fields.files import ImageFieldFile
 from imagebkd.apiutils import RequestHandleFailException, subList
-from imagebkd.models import Operation, InputFile
+from imagebkd.models import Operation, InputFile, Output
 from videopj.settings import MEDIA_ROOT
 
 
@@ -104,12 +104,12 @@ def unzipAllChooseImages(zipPath):
     return res, foldername
 
 
-def getFilesListOrZip(pathStr: str, enableZip: bool):
+def getFilesListOrZip(pathStr: str, otpObj: Output, enableZip: bool):
     if not (pathStr and pathStr != ""):
         return None, []
     if os.path.isdir(pathStr):
         zipFileName = None
-        if enableZip > 0:
+        if enableZip:
             zipFileName = pathStr + ".zip"
             if not os.path.exists(zipFileName):
                 with zipfile.ZipFile(zipFileName, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
@@ -119,12 +119,8 @@ def getFilesListOrZip(pathStr: str, enableZip: bool):
                             relapath = os.path.relpath(pathfile, pathStr)
                             zipf.write(pathfile, relapath)
         res = []
-        for root, dirs, files in os.walk(pathStr):
-            for file in files:
-                realPath = os.path.join(root, file)
-                kind = filetype.image(realPath)
-                if kind:
-                    res.append(realPath)
+        for filemodel in otpObj.moreoutputfile_set.all():
+            res.append(filemodel.filePath)
         return zipFileName, res
     else:
         return pathStr, [pathStr]

@@ -29,13 +29,13 @@
         </h1>
     </div>
     <div>
-    输入图片：
+        <h1>输入图片：{% if ope.toomany %}（至多显示5张）{% endif %}</h1>
     {% for input in ope.inputs %}
     <img src="{{input.url}}"  alt="图片加载中" />
     {% endfor %}
     </div>
     <div>
-    处理结果：
+        <h1>处理结果：{% if ope.toomany %}（每组结果图片至多显示5张，更多图片请下载查看）{% endif %}</h1>
     </div>
     {% for one in ope.opers %}
     <div class="resItem">
@@ -45,7 +45,10 @@
         <form method="get" action="" style="display: none">
             <div><input type="submit" value="下载结果文件" /></div>
         </form>
+        <div class="resItemPics"></div>
     </div>
+    <br>
+    <br>
     {% endfor %}
 
 </body>
@@ -68,7 +71,9 @@
                 itemsList = $(".resItem");
                 for (let i = 0; i < jsonObj.opers.length; i++) {
                     itemsList[i].getElementsByTagName("span")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
-                    imgItemList = itemsList[i].getElementsByTagName("img");
+                    picsDiv = $(itemsList[i]).children(".resItemPics")[0];
+                    console.log(picsDiv);
+                    imgItemList = picsDiv.getElementsByTagName("img");
                     formElement = itemsList[i].getElementsByTagName("form")[0];
                     formElement.style.display = jsonObj.opers[i].outputDownload?"inline-block":"none";
                     formElement.action = jsonObj.opers[i].outputDownload?jsonObj.opers[i].outputDownload:"";
@@ -79,22 +84,23 @@
                     for(;j<jsonObj.opers[i].outputFileUrls.length;j++){
                         let newElement = document.createElement("img")
                         newElement.src = jsonObj.opers[i].outputFileUrls[j];
-                        itemsList[i].appendChild(newElement)
+                        picsDiv.appendChild(newElement)
                     }
                     for(;j<imgItemList.length;j++){
-                        itemsList[i].removeChild(imgItemList[j])
+                        picsDiv.removeChild(imgItemList[j])
                     }
                 }
+                timerId = setTimeout(requestChange, 500);
             },
             fail(res) {
                 console.log(res);
                 eval(res);
-                if(timerId)clearInterval(timerId)
+                    if(timerId)clearTimeout(timerId)
             }
         })
     }
     window.onload = function() {
-        timerId = setInterval(requestChange, 500);
+        timerId = setTimeout(requestChange, 500);
     }
 </script>
 
