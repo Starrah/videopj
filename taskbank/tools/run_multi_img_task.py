@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
-import utils
-import init_paths
+from .utils import *
+from .init_paths import *
 
 import argparse
 import importlib
@@ -34,36 +34,17 @@ from skimage import color
 from models.sample_models import *
 from lib.data.synset import *
 from PIL import Image, ImageDraw, ImageFont
-from task_viz import *
+from .task_viz import *
 from data.load_ops import resize_rescale_image
 from data.load_ops import rescale_image
 
-parser = argparse.ArgumentParser(description='Viz Single Task')
 
-parser.add_argument('--task', dest='task')
-parser.set_defaults(task='NONE')
-
-parser.add_argument('--img', dest='im_name')
-parser.set_defaults(im_name='NONE')
-
-parser.add_argument('--store', dest='store_name')
-parser.set_defaults(store_name='NONE')
-
-parser.add_argument('--store-rep', dest='store_rep', action='store_true')
-parser.set_defaults(store_rep=False)
-
-parser.add_argument('--store-pred', dest='store_pred', action='store_true')
-parser.set_defaults(store_pred=False)
-
-parser.add_argument('--on-screen', dest='on_screen', action='store_true')
-parser.set_defaults(on_screen=False)
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 list_of_tasks = 'ego_motion \
 fix_pose \
-non_fixated_pose \
-point_match'
+non_fixated_pose '
 list_of_tasks = list_of_tasks.split()
 
 
@@ -71,10 +52,10 @@ def generate_cfg(task):
     repo_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     CONFIG_DIR = os.path.join(repo_dir, 'experiments/final', task)
     # Load Configs #
-    import utils
+    #import utils
     import data.load_ops as load_ops
     from general_utils import RuntimeDeterminedEnviromentVars
-    cfg = utils.load_config(CONFIG_DIR, nopause=True)
+    cfg = load_config(CONFIG_DIR, nopause=True)
     RuntimeDeterminedEnviromentVars.register_dict(cfg)
     cfg['batch_size'] = 1
     if 'batch_size' in cfg['encoder_kwargs']:
@@ -84,11 +65,12 @@ def generate_cfg(task):
     return cfg
 
 
-args = parser.parse_args()
 
 
-def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.store_rep, store_pred=args.store_pred,
-                store_name=args.store_name):
+def run_to_tasks(task=None, imgs='', store_rep=False, store_pred=False,
+                store_name=None):
+    if imgs:
+        imgs=imgs.split(',')
     import general_utils
     from general_utils import RuntimeDeterminedEnviromentVars
     tf.logging.set_verbosity(tf.logging.ERROR)
@@ -119,14 +101,14 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
 
     # Set Up Inputs #
     # tf.logging.set_verbosity( tf.logging.INFO )
-    setup_input_fn = utils.setup_input
+    setup_input_fn = setup_input
     inputs = setup_input_fn(cfg, is_training=False, use_filename_queue=False)
     RuntimeDeterminedEnviromentVars.load_dynamic_variables(inputs, cfg)
     RuntimeDeterminedEnviromentVars.populate_registered_variables()
     start_time = time.time()
 
     # Set Up Model #
-    model = utils.setup_model(inputs, cfg, is_training=False)
+    model = setup_model(inputs, cfg, is_training=False)
     m = model['model']
     model['saver_op'].restore(training_runners['sess'], cfg['model_path'])
 
@@ -152,10 +134,7 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
     if task == 'non_fixated_pose':
         cam_pose(predicted, store_name, is_fixated=False)
         return
-    if task == 'point_match':
-        prediction = np.argmax(predicted, axis=1)
-        print('the prediction (1 stands for match, 0 for unmatch)is: ', prediction)
-        return
+
         # Clean Up #
     training_runners['coord'].request_stop()
     training_runners['coord'].join()
@@ -168,4 +147,25 @@ def run_to_task(task=args.task, imgs=args.im_name.split(','), store_rep=args.sto
 
 
 if __name__ == '__main__':
-    run_to_task()
+    parser = argparse.ArgumentParser(description='Viz Single Task')
+
+    parser.add_argument('--task', dest='task')
+    parser.set_defaults(task='NONE')
+
+    parser.add_argument('--img', dest='im_name')
+    parser.set_defaults(im_name='NONE')
+
+    parser.add_argument('--store', dest='store_name')
+    parser.set_defaults(store_name='NONE')
+
+    parser.add_argument('--store-rep', dest='store_rep', action='store_true')
+    parser.set_defaults(store_rep=False)
+
+    parser.add_argument('--store-pred', dest='store_pred', action='store_true')
+    parser.set_defaults(store_pred=False)
+
+    parser.add_argument('--on-screen', dest='on_screen', action='store_true')
+    parser.set_defaults(on_screen=False)
+    args = parser.parse_args()
+
+    run_to_tasks()

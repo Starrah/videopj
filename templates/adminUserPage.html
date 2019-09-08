@@ -32,7 +32,9 @@
 
     <div>
         <form method="post" action="adminDeleteUser">
-            点击对应链接可进入查看用户的记录；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除用户。<br><br>
+            <p style="font-size: 1em">点击对应链接可进入查看用户的记录；在下方勾选后，点击<input type="submit" value="删除" style="display: inline" />按钮可删除用户。</p>
+            <br>
+            <div style="font-size: 1.5em">
             序号 删除 用户编号 用户名 上次登录 操作总数
         {% for l in data.list %}
         <div>

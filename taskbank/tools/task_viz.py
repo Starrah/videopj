@@ -14,7 +14,7 @@ import tensorflow.contrib.slim as slim
 import threading
 import scipy.misc
 from skimage import color
-import init_paths
+from .init_paths import *
 from models.sample_models import *
 from lib.data.synset import *
 import scipy

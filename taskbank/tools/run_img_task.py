@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
-import utils
-import init_paths
+from .utils import *
+from .init_paths import *
 import argparse
 import importlib
 import itertools
@@ -28,7 +28,7 @@ import random
 import models.architectures as architectures
 import lib.data.load_ops as load_ops
 
-from task_viz import *
+from .task_viz import *
 from models.sample_models import *
 from lib.data.synset import *
 from skimage import color
@@ -37,25 +37,7 @@ from PIL import Image, ImageDraw, ImageFont
 from data.load_ops import resize_rescale_image
 from data.load_ops import rescale_image
 
-parser = argparse.ArgumentParser(description='Viz Single Task')
 
-parser.add_argument('--task', dest='task')
-parser.set_defaults(task='NONE')
-
-parser.add_argument('--img', dest='im_name')
-parser.set_defaults(im_name='NONE')
-
-parser.add_argument('--store', dest='store_name')
-parser.set_defaults(store_name='NONE')
-
-parser.add_argument('--store-rep', dest='store_rep', action='store_true')
-parser.set_defaults(store_rep=False)
-
-parser.add_argument('--store-pred', dest='store_pred', action='store_true')
-parser.set_defaults(store_pred=False)
-
-parser.add_argument('--on-screen', dest='on_screen', action='store_true')
-parser.set_defaults(on_screen=False)
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
@@ -71,10 +53,10 @@ def generate_cfg(task):
     repo_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     CONFIG_DIR = os.path.join(repo_dir, 'experiments/final', task)
     # Load Configs #
-    import utils
+    #import utils
     import data.load_ops as load_ops
     from general_utils import RuntimeDeterminedEnviromentVars
-    cfg = utils.load_config(CONFIG_DIR, nopause=True)
+    cfg = load_config(CONFIG_DIR, nopause=True)
     RuntimeDeterminedEnviromentVars.register_dict(cfg)
     cfg['batch_size'] = 1
     if 'batch_size' in cfg['encoder_kwargs']:
@@ -84,11 +66,10 @@ def generate_cfg(task):
     return cfg
 
 
-args = parser.parse_args()
 
 
-def run_to_task(task=args.task, im_name=args.im_name, store_rep=args.store_rep, store_pred=args.store_pred,
-                store_name=args.store_name):
+def run_to_task(task=None, im_name=None, store_rep=False, store_pred=False,
+                store_name=None):
     import general_utils
     from general_utils import RuntimeDeterminedEnviromentVars
 
@@ -130,14 +111,14 @@ def run_to_task(task=args.task, im_name=args.im_name, store_rep=args.store_rep, 
 
     # Set Up Inputs #
     # tf.logging.set_verbosity( tf.logging.INFO )
-    setup_input_fn = utils.setup_input
+    setup_input_fn = setup_input
     inputs = setup_input_fn(cfg, is_training=False, use_filename_queue=False)
     RuntimeDeterminedEnviromentVars.load_dynamic_variables(inputs, cfg)
     RuntimeDeterminedEnviromentVars.populate_registered_variables()
     start_time = time.time()
 
     # Set Up Model #
-    model = utils.setup_model(inputs, cfg, is_training=False)
+    model = setup_model(inputs, cfg, is_training=False)
     m = model['model']
     model['saver_op'].restore(training_runners['sess'], cfg['model_path'])
 
@@ -223,4 +204,27 @@ def run_to_task(task=args.task, im_name=args.im_name, store_rep=args.store_rep, 
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Viz Single Task')
+
+    parser.add_argument('--task', dest='task')
+    parser.set_defaults(task='NONE')
+
+    parser.add_argument('--img', dest='im_name')
+    parser.set_defaults(im_name='NONE')
+
+    parser.add_argument('--store', dest='store_name')
+    parser.set_defaults(store_name='NONE')
+
+    parser.add_argument('--store-rep', dest='store_rep', action='store_true')
+    parser.set_defaults(store_rep=False)
+
+    parser.add_argument('--store-pred', dest='store_pred', action='store_true')
+    parser.set_defaults(store_pred=False)
+
+    parser.add_argument('--on-screen', dest='on_screen', action='store_true')
+    parser.set_defaults(on_screen=False)
+
+    args = parser.parse_args()
+
     run_to_task()
+

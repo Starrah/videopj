@@ -14,7 +14,7 @@ import tensorflow.contrib.slim as slim
 import threading
 import concurrent.futures
 
-import init_paths
+from .init_paths import *
 import data.load_ops as load_ops
 from lib.data.load_ops import create_input_placeholders_and_ops, get_filepaths_list
 import general_utils

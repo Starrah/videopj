@@ -1,6 +1,7 @@
-import run_img_task
-import run_multi_img_task
+
 import multiprocessing
+from .run_img_task import *
+from .run_multi_img_task import *
 
 '''
 
@@ -32,17 +33,21 @@ def work(task, im_name, store_name, store_rep=False, store_pred=False, is_multi_
 
     '''
     if not is_multi_task:
-        p = multiprocessing.Process(target=run_img_task.run_to_task,
+        p = multiprocessing.Process(target=run_to_task,
                                     args=(task, im_name, store_rep, store_pred, store_name))
         p.start()
+        p.join()
+        #subprocess.Popen(["python", "run_img_task.py", task, im_name, store_rep, store_pred, store_name])
         print('task: ' + task + ' finished!')
     else:
-        p = multiprocessing.Process(target=run_multi_img_task.run_to_task,
+        p = multiprocessing.Process(target=run_to_tasks,
                                     args=(task, im_name, store_rep, store_pred, store_name))
         p.start()
+        p.join()
+
         print('task: ' + task + ' finished!')
 
     return
 
 if __name__=='__main__':
-    work('rgb2sfnorm', 'assets/test.png', 'assets/test_sf.png')
+    work('rgb2sfnorm', '../assets/test.png', '../assets/test_sf.png')

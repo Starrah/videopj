@@ -19,7 +19,7 @@ Segmentation-3D : segment25d
 Segmentation-Semantic : segmentsemantic
 Surface-Normal : rgb2sfnorm
 Vanishing-Point : vanishing_point
-Pairwise-Nonfixated-Camera-Pose : non_fixated_pose
-Pairwise-Fixated-Camera-Pose : fix_pose
-Triplet-Fixated-Camera-Pose : ego_motion
-Point-Matching : point_match
+Pairwise-Nonfixated-Camera-Pose : non_fixated_pose 2张
+Pairwise-Fixated-Camera-Pose : fix_pose 2张
+Triplet-Fixated-Camera-Pose : ego_motion 3张
+Point-Matching : point_match 2张

@@ -28,34 +28,37 @@
             {% endif %}
         </h1>
     </div>
-    输入图片：
-    <img src="{{ope.input.url}}"  alt="图片加载中" />
-
-    处理结果：
+    <div>
+        <h1>输入图片：{% if ope.toomany %}（至多显示5张）{% endif %}</h1>
+    {% for input in ope.inputs %}
+    <img src="{{input.url}}"  alt="图片加载中" />
+    {% endfor %}
+    </div>
+    <div>
+        <h1>处理结果：{% if ope.toomany %}（每组结果图片至多显示5张，更多图片请下载查看）{% endif %}</h1>
+    </div>
     {% for one in ope.opers %}
     <div class="resItem">
-        <p style="font-size: 2em">
+        <span style="font-size: 2em">
             {{one.name}}：{% if one.outputStr %}{{one.outputStr}}{% endif %}
-        </p>
-        <img src="{% if one.outputFileUrl %}{{one.outputFileUrl}}{% endif %}"  alt="" />
+        </span>
+        <form method="get" action="" style="display: none">
+            <div><input type="submit" value="下载结果文件" /></div>
+        </form>
+        <div class="resItemPics"></div>
     </div>
+    <br>
+    <br>
     {% endfor %}
-
-    <form method="get" action="uploadPage">
-        <div>
-            <input type="submit" value="返回上传页面" />
-        </div>
-    </form>
-
 
 </body>
 
 <script>
+    var timerId = 0;
     operId = {{ope.id}}
     function requestChange() {
         $.ajax(`queryResult?id=${operId}`, {
             success(res) {
-                console.log(res);
                 jsonObj = res;
                 statusStr = $("#status")[0];
                 if(res.status === 0){
@@ -67,19 +70,37 @@
                 }
                 itemsList = $(".resItem");
                 for (let i = 0; i < jsonObj.opers.length; i++) {
-                    console.log(jsonObj.opers[i]);
-                    itemsList[i].getElementsByTagName("p")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
-                    itemsList[i].getElementsByTagName("img")[0].src = jsonObj.opers[i].outputFileUrl ? jsonObj.opers[i].outputFileUrl : "";
+                    itemsList[i].getElementsByTagName("span")[0].innerText = jsonObj.opers[i].outputStr ? jsonObj.opers[i].name + "：" + jsonObj.opers[i].outputStr : "";
+                    picsDiv = $(itemsList[i]).children(".resItemPics")[0];
+                    console.log(picsDiv);
+                    imgItemList = picsDiv.getElementsByTagName("img");
+                    formElement = itemsList[i].getElementsByTagName("form")[0];
+                    formElement.style.display = jsonObj.opers[i].outputDownload?"inline-block":"none";
+                    formElement.action = jsonObj.opers[i].outputDownload?jsonObj.opers[i].outputDownload:"";
+                    let j;
+                    for(j=0;j<Math.min(imgItemList.length, jsonObj.opers[i].outputFileUrls.length);j++){
+                        imgItemList[j].src = jsonObj.opers[i].outputFileUrls[j];
+                    }
+                    for(;j<jsonObj.opers[i].outputFileUrls.length;j++){
+                        let newElement = document.createElement("img")
+                        newElement.src = jsonObj.opers[i].outputFileUrls[j];
+                        picsDiv.appendChild(newElement)
+                    }
+                    for(;j<imgItemList.length;j++){
+                        picsDiv.removeChild(imgItemList[j])
+                    }
                 }
+                timerId = setTimeout(requestChange, 500);
             },
             fail(res) {
+                console.log(res);
                 eval(res);
-                if(timerId)clearInterval(timerId)
+                timerId = setTimeout(requestChange, 2000)
             }
         })
     }
     window.onload = function() {
-        timerId = setInterval(requestChange, 500);
+        timerId = setTimeout(requestChange, 500);
     }
 </script>
 
