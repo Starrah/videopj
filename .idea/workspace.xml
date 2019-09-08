@@ -2,37 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="13e2b353-4589-41a4-8e82-18250f8704dd" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/image/upload/示例.png" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/admin.py" afterPath="$PROJECT_DIR$/imagebkd/admin.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/apiutils.py" afterPath="$PROJECT_DIR$/imagebkd/apiutils.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/apps.py" afterPath="$PROJECT_DIR$/imagebkd/apps.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/middleware.py" afterPath="$PROJECT_DIR$/imagebkd/middleware.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/migrations/0001_initial.py" afterPath="$PROJECT_DIR$/imagebkd/migrations/0001_initial.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/migrations/0002_auto_20190904_1525.py" afterPath="" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/models.py" afterPath="$PROJECT_DIR$/imagebkd/models.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/modelutils.py" afterPath="$PROJECT_DIR$/imagebkd/modelutils.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/operType.py" afterPath="$PROJECT_DIR$/imagebkd/operType.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/static/jquery.min.js" afterPath="$PROJECT_DIR$/imagebkd/static/jquery.min.js" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/tests.py" afterPath="$PROJECT_DIR$/imagebkd/tests.py" />
-      <change beforePath="$PROJECT_DIR$/imagebkd/views.py" afterPath="$PROJECT_DIR$/imagebkd/views.py" />
-      <change beforePath="$PROJECT_DIR$/manage.py" afterPath="$PROJECT_DIR$/manage.py" />
-      <change beforePath="$PROJECT_DIR$/taskbank/.idea/workspace.xml" afterPath="$PROJECT_DIR$/taskbank/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/taskbank/assets/test_sf.png" afterPath="$PROJECT_DIR$/taskbank/assets/test_sf.png" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/controller.py" afterPath="$PROJECT_DIR$/taskbank/tools/controller.py" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/run_img_task.py" afterPath="$PROJECT_DIR$/taskbank/tools/run_img_task.py" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/run_multi_img_task.py" afterPath="$PROJECT_DIR$/taskbank/tools/run_multi_img_task.py" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/task_dict.txt" afterPath="$PROJECT_DIR$/taskbank/tools/task_dict.txt" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/task_viz.py" afterPath="$PROJECT_DIR$/taskbank/tools/task_viz.py" />
-      <change beforePath="$PROJECT_DIR$/taskbank/tools/utils.py" afterPath="$PROJECT_DIR$/taskbank/tools/utils.py" />
-      <change beforePath="$PROJECT_DIR$/templates/adminHistoryPage.html" afterPath="$PROJECT_DIR$/templates/adminHistoryPage.html" />
-      <change beforePath="$PROJECT_DIR$/templates/adminUserPage.html" afterPath="$PROJECT_DIR$/templates/adminUserPage.html" />
-      <change beforePath="$PROJECT_DIR$/templates/historyPage.html" afterPath="$PROJECT_DIR$/templates/historyPage.html" />
-      <change beforePath="$PROJECT_DIR$/templates/loginPage.html" afterPath="$PROJECT_DIR$/templates/loginPage.html" />
-      <change beforePath="$PROJECT_DIR$/templates/resultPage.html" afterPath="$PROJECT_DIR$/templates/resultPage.html" />
-      <change beforePath="$PROJECT_DIR$/templates/uploadPage.html" afterPath="$PROJECT_DIR$/templates/uploadPage.html" />
-      <change beforePath="$PROJECT_DIR$/videopj/settings.py" afterPath="$PROJECT_DIR$/videopj/settings.py" />
-      <change beforePath="$PROJECT_DIR$/videopj/urls.py" afterPath="$PROJECT_DIR$/videopj/urls.py" />
-      <change beforePath="$PROJECT_DIR$/videopj/wsgi.py" afterPath="$PROJECT_DIR$/videopj/wsgi.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/imagebkd/migrations/0003_auto_20190906_1549.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/imagebkd/migrations/0004_output_process.py" />
+      <change beforePath="" afterPath="$PROJECT_DIR$/imagebkd/migrations/0005_auto_20190908_0017.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -297,7 +269,7 @@
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.46778044" sideWeight="0.50215983" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3293556" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25059667" sideWeight="0.49784017" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
