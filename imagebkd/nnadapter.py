@@ -1,11 +1,11 @@
 import os
 import threading
 from os import path
-import shutil
 from imagebkd.apiutils import RequestHandleFailException
 from imagebkd.fileutils import determineDownload
 from videopj.settings import MEDIA_ROOT
-from taskbank.tools.controller import work
+import shutil
+#from taskbank.tools.controller import work
 
 # 接入神经网络的适配器
 NNList = [{"name": "Autoencoder", "param": "autoencoder", "isMultiInput": False},
@@ -29,9 +29,9 @@ NNList = [{"name": "Autoencoder", "param": "autoencoder", "isMultiInput": False}
           {"name": "Segmentation-Semantic", "param": "segmentsemantic", "isMultiInput": False},
           {"name": "Surface-Normal", "param": "rgb2sfnorm", "isMultiInput": False},
           {"name": "Vanishing-Point", "param": "vanishing_point", "isMultiInput": False},
-          {"name": "Pairwise-Nonfixated-Camera-Pose", "param": "non_fixated_pose", "isMultiInput": True, "allowPicCount": [2,3]},
-          {"name": "Pairwise-Fixated-Camera-Pose", "param": "fix_pose", "isMultiInput": True, "allowPicCount": [2,3]},
-          {"name": "Triplet-Fixated-Camera-Pose", "param": "ego_motion", "isMultiInput": True, "allowPicCount": [3,4]}]
+          {"name": "Pairwise-Nonfixated-Camera-Pose(2张)", "param": "non_fixated_pose", "isMultiInput": True, "allowPicCount": [2,3]},
+          {"name": "Pairwise-Fixated-Camera-Pose(3张)", "param": "fix_pose", "isMultiInput": True, "allowPicCount": [2,3]},
+          {"name": "Triplet-Fixated-Camera-Pose(3张)", "param": "ego_motion", "isMultiInput": True, "allowPicCount": [3,4]}]
 
 
 class asyncNN(threading.Thread):
@@ -187,7 +187,6 @@ class NNInterface(threading.Thread):
                 self.inputPath = aimPath
         if isinstance(self.inputPath, list):
             inStr = ",".join(list(map(lambda x: path.abspath(x), self.inputPath)))
-            print(inStr)
         else:
             inStr = path.abspath(self.inputPath)
         if isinstance(self.outputPath, list):
@@ -200,19 +199,22 @@ class NNInterface(threading.Thread):
 
         # 以下是连通神经网络的API的代码
         # 正式接入神经网络时请取消这部分的注释
-        print("aaaaaa")
-        work(NNList[self.otpObj.type]["param"], inStr, outStr, is_multi_task=NNList[self.otpObj.type]["isMultiInput"])
-        print("bbbbbbb")
-        return None, outStr
+        print("task start", str(self.otpObj.type), inStr, outStr)
+        # try:
+        #     work(NNList[self.otpObj.type]["param"], inStr, outStr, is_multi_task=NNList[self.otpObj.type]["isMultiInput"])
+        #     print("task end", str(self.otpObj.type), inStr, outStr)
+        #     return None, outStr
+        # except BaseException as e:
+        #     print("task exception", str(self.otpObj.type), inStr, outStr)
+        #     return str(e), outStr
 
 
         # 以下是本机单元测试用代码，没有接入神经网络，作用是5s后返回固定图片作为处理结果
         # 正式接入神经网络时请把这部分注释掉
-        # import time
-        # import shutil
-        # import random
-        # time.sleep(random.uniform(5,30))
-        # shutil.copyfile("image/download/示例.png", outStr)
-        # return "测试", outStr
+        import time
+        import random
+        time.sleep(random.uniform(5,30))
+        shutil.copyfile("image/download/示例.png", outStr)
+        return "测试", outStr
 
 
