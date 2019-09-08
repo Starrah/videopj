@@ -1,3 +1,6 @@
 venv
 db.sqlite3
 taskbank/temp
+.idea
+*/__pycache__
+__pychche

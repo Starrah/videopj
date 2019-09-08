@@ -5,7 +5,7 @@ from imagebkd.apiutils import RequestHandleFailException
 from imagebkd.fileutils import determineDownload
 from videopj.settings import MEDIA_ROOT
 import shutil
-#from taskbank.tools.controller import work
+from taskbank.tools.controller import work
 
 # 接入神经网络的适配器
 NNList = [{"name": "Autoencoder", "param": "autoencoder", "isMultiInput": False},
@@ -200,21 +200,21 @@ class NNInterface(threading.Thread):
         # 以下是连通神经网络的API的代码
         # 正式接入神经网络时请取消这部分的注释
         print("task start", str(self.otpObj.type), inStr, outStr)
-        # try:
-        #     work(NNList[self.otpObj.type]["param"], inStr, outStr, is_multi_task=NNList[self.otpObj.type]["isMultiInput"])
-        #     print("task end", str(self.otpObj.type), inStr, outStr)
-        #     return None, outStr
-        # except BaseException as e:
-        #     print("task exception", str(self.otpObj.type), inStr, outStr)
-        #     return str(e), outStr
+        try:
+            work(NNList[self.otpObj.type]["param"], inStr, outStr, is_multi_task=NNList[self.otpObj.type]["isMultiInput"])
+            print("task end", str(self.otpObj.type), inStr, outStr)
+            return None, outStr
+        except BaseException as e:
+            print("task exception", str(self.otpObj.type), inStr, outStr)
+            return str(e), outStr
 
 
         # 以下是本机单元测试用代码，没有接入神经网络，作用是5s后返回固定图片作为处理结果
         # 正式接入神经网络时请把这部分注释掉
-        import time
-        import random
-        time.sleep(random.uniform(5,30))
-        shutil.copyfile("image/download/示例.png", outStr)
-        return "测试", outStr
+        # import time
+        # import random
+        # time.sleep(random.uniform(5,30))
+        # shutil.copyfile("image/download/示例.png", outStr)
+        # return "测试", outStr
 
 
